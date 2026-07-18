@@ -1,34 +1,46 @@
 import asyncio
-import random
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# ===== ВСТАВЬ СВОЙ НОВЫЙ ТОКЕН =====
-BOT_TOKEN = "8829428365:AAFooImya094bFTyDALCX9sfUa0PODPJWXY"
-# ====================================
+# Токен из переменной окружения
+BOT_TOKEN = os.getenv("AAFooImya094bFTyDALCX9sfUa0PODPJWXY")
 
-# --- БАЗА ССЫЛОК (замени на свои) ---
-SKINS = {
-    "Одежда": [
-        "https://www.roblox.com/catalog/123456789/Футболка-пример",
-        "https://www.roblox.com/catalog/987654321/Штаны-пример"
+# --- ТОЛЬКО ПРОМОКОДЫ И ИНСТРУКЦИЯ ---
+CATEGORIES = {
+    "🎁 Промокоды": [
+        "SPIDERCOLA",
+        "TWEETROBLOX",
+        "DIY",
+        "GETMOVING",
+        "SETTINGTHESTAGE",
+        "STRIKEAPOSE",
+        "VICTORYLAP",
+        "WORLDALIVE",
+        "BOARDWALK",
+        "FXARTIST",
+        "GLIMMER",
+        "PARTICLEWIZARD",
+        "THINGSGOBOOM",
+        "ROSSMANNSPRING26",
+        "ROBLOXATHLETES"
     ],
-    "Аксессуары": [
-        "https://www.roblox.com/catalog/111111111/Шляпа-пример"
-    ],
-    "Эмоции": [
-        "https://www.roblox.com/catalog/333333333/Эмоция-пример"
+    "❓ Инструкция": [
+        "Чтобы активировать промокод в Roblox:\n"
+        "1. Перейди по ссылке: https://www.roblox.com/redeem\n"
+        "2. Введи код в поле\n"
+        "3. Нажми кнопку «Redeem»\n\n"
+        "⚠️ Промокоды действуют ограниченное время!\n"
+        "Вводи их как можно скорее, чтобы не упустить награду."
     ]
 }
 
-ALL_SKINS = [link for sub in SKINS.values() for link in sub]
-
 def get_keyboard():
+    """Создаёт клавиатуру с двумя кнопками"""
     buttons = []
-    for cat in SKINS.keys():
+    for cat in CATEGORIES.keys():
         buttons.append([InlineKeyboardButton(text=cat, callback_data=f"cat_{cat}")])
-    buttons.append([InlineKeyboardButton(text="🎲 Случайный скин", callback_data="random")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 dp = Dispatcher()
@@ -36,40 +48,36 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def start(message: types.Message):
     await message.answer(
-        "👋 Привет! Я бот для бесплатных скинов в Roblox.\n"
-        "Выбери категорию или нажми «Случайный скин»:",
+        "👋 Привет! Я бот с актуальными промокодами для Roblox.\n"
+        "Выбери нужный раздел:",
         reply_markup=get_keyboard()
     )
-
-@dp.message(Command("get_skin"))
-async def get_skin(message: types.Message):
-    if not ALL_SKINS:
-        await message.answer("Список пуст, добавь ссылки.")
-        return
-    link = random.choice(ALL_SKINS)
-    await message.answer(f"🎁 Вот ссылка:\n{link}")
 
 @dp.callback_query()
 async def handle_callback(callback: types.CallbackQuery):
     data = callback.data
     if data.startswith("cat_"):
         category = data[4:]
-        links = SKINS.get(category, [])
-        if not links:
-            await callback.answer("В этой категории нет ссылок", show_alert=True)
-            return
-        link = random.choice(links)
-        await callback.message.answer(f"🎁 Скин из категории «{category}»:\n{link}")
-        await callback.answer()
-    elif data == "random":
-        if not ALL_SKINS:
-            await callback.answer("Список пуст", show_alert=True)
-            return
-        link = random.choice(ALL_SKINS)
-        await callback.message.answer(f"🎲 Случайный скин:\n{link}")
+        items = CATEGORIES.get(category, [])
+
+        if category == "🎁 Промокоды":
+            # Выдаём все промокоды списком
+            promo_list = "\n".join([f"• {code}" for code in items])
+            await callback.message.answer(
+                f"🎁 Актуальные промокоды (Июль 2026):\n\n{promo_list}\n\n"
+                "Вводи их на странице: https://www.roblox.com/redeem"
+            )
+        elif category == "❓ Инструкция":
+            await callback.message.answer(items[0])
+        else:
+            await callback.answer("Раздел временно пуст", show_alert=True)
+
         await callback.answer()
 
 async def main():
+    if not BOT_TOKEN:
+        print("❌ Ошибка: токен не найден! Добавьте переменную BOT_TOKEN на Render.")
+        return
     bot = Bot(token=BOT_TOKEN)
     print("✅ Бот запущен...")
     await dp.start_polling(bot)
