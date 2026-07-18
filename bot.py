@@ -1,10 +1,10 @@
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 BOT_TOKEN = "8829428365:AAFooImya094bFTyDALCX9sfUa0PODPJWXY"
-DEVELOPER = "@Dmitry102_0"  # твой Telegram
+DEVELOPER = "@Dmitry102_0"
 
 PROMO_CODES = [
     "SPIDERCOLA", "TWEETROBLOX", "DIY", "GETMOVING",
@@ -23,11 +23,15 @@ INSTRUCTION = (
 )
 
 def get_main_keyboard():
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎁 Промокоды", callback_data="show_promos")],
-        [InlineKeyboardButton(text="❓ Инструкция", callback_data="show_instruction")],
-        [InlineKeyboardButton(text="📩 Написать разработчику", url=f"https://t.me/{DEVELOPER.replace('@', '')}")]
-    ])
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🎁 Промокоды")],
+            [KeyboardButton(text="❓ Инструкция")],
+            [KeyboardButton(text="📩 Написать разработчику")]
+        ],
+        resize_keyboard=True,
+        is_persistent=True
+    )
 
 def get_copy_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
@@ -36,30 +40,62 @@ def get_copy_keyboard():
 
 dp = Dispatcher()
 
+# ========== КОМАНДЫ ==========
 @dp.message(Command("start"))
 async def start(message: types.Message):
     await message.answer(
-        "👋 Привет! Я бот с промокодами для Roblox.\n"  # ← здесь меняй текст
-        "Выбери раздел:",
+        "👋 Привет! Я бот с промокодами для Roblox.",
         reply_markup=get_main_keyboard()
     )
 
+@dp.message(Command("promos"))
+async def promos_command(message: types.Message):
+    promo_list = "\n".join([f"• {code}" for code in PROMO_CODES])
+    await message.answer(
+        f"🎁 Промокоды:\n\n{promo_list}",
+        reply_markup=get_copy_keyboard()
+    )
+
+@dp.message(Command("instruction"))
+async def instruction_command(message: types.Message):
+    await message.answer(INSTRUCTION)
+
+@dp.message(Command("help"))
+async def help_command(message: types.Message):
+    await message.answer(
+        "📋 Доступные команды:\n"
+        "/start — главное меню\n"
+        "/promos — промокоды\n"
+        "/instruction — инструкция\n"
+        "/help — это сообщение\n\n"
+        "Или просто пользуйся кнопками внизу 👇"
+    )
+
+# ========== КНОПКИ ==========
+@dp.message(lambda message: message.text == "🎁 Промокоды")
+async def show_promos(message: types.Message):
+    promo_list = "\n".join([f"• {code}" for code in PROMO_CODES])
+    await message.answer(
+        f"🎁 Промокоды:\n\n{promo_list}",
+        reply_markup=get_copy_keyboard()
+    )
+
+@dp.message(lambda message: message.text == "❓ Инструкция")
+async def show_instruction(message: types.Message):
+    await message.answer(INSTRUCTION)
+
+@dp.message(lambda message: message.text == "📩 Написать разработчику")
+async def contact_developer(message: types.Message):
+    await message.answer(f"👨‍💻 Свяжись с разработчиком: {DEVELOPER}")
+
+# ========== INLINE ==========
 @dp.callback_query()
-async def handle(callback: types.CallbackQuery):
-    data = callback.data
-    if data == "show_promos":
-        promo_list = "\n".join([f"• {code}" for code in PROMO_CODES])
-        await callback.message.answer(
-            f"🎁 Промокоды:\n\n{promo_list}",
-            reply_markup=get_copy_keyboard()
-        )
-    elif data == "copy_all":
+async def handle_copy(callback: types.CallbackQuery):
+    if callback.data == "copy_all":
         await callback.message.answer(
             "📋 Скопируй:\n\n" + "\n".join(PROMO_CODES)
         )
-    elif data == "show_instruction":
-        await callback.message.answer(INSTRUCTION)
-    await callback.answer()
+        await callback.answer()
 
 async def main():
     bot = Bot(token=BOT_TOKEN)
