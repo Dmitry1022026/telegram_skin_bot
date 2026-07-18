@@ -1,13 +1,19 @@
 import asyncio
+import os
+import random
+import sys
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# ===== ВСТАВЬ СВОЙ ТОКЕН =====
-BOT_TOKEN = "AAFooImya094bFTyDALCX9sfUa0PODPJWXY"
-# ===============================
+# ===== ТОКЕН =====
+BOT_TOKEN = os.getenv("8829428365:AAFooImya094bFTyDALCX9sfUa0PODPJWXY")
+if not BOT_TOKEN:
+    print("❌ Токен не найден! Добавьте BOT_TOKEN в переменные Railway.")
+    sys.exit(1)
+# =================
 
-# --- ПРОМОКОДЫ И ИНСТРУКЦИЯ ---
+# --- ПРОМОКОДЫ ---
 PROMO_CODES = [
     "SPIDERCOLA",
     "TWEETROBLOX",
@@ -35,17 +41,32 @@ INSTRUCTION = (
     "Вводи их как можно скорее, чтобы не упустить награду."
 )
 
-# --- КЛАВИАТУРА ---
+# ТЕКСТ ДЛЯ РАЗРАБОТЧИКА (изменён)
+SUPPORT_TEXT = (
+    "📞 По всем вопросам пиши разработчику:\n"
+    "👤 @Dmitry102_0\n\n"
+    "Нажми кнопку ниже, чтобы сразу написать ему в Telegram."
+)
+
+# --- КЛАВИАТУРЫ ---
 def get_main_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="🎁 Промокоды", callback_data="show_promos")],
-        [InlineKeyboardButton(text="❓ Инструкция", callback_data="show_instruction")]
+        [InlineKeyboardButton(text="🎁 Все промокоды", callback_data="show_promos")],
+        [InlineKeyboardButton(text="🎲 Случайный код", callback_data="random_promo")],
+        [InlineKeyboardButton(text="❓ Инструкция", callback_data="show_instruction")],
+        [InlineKeyboardButton(text="📞 Написать разработчику", callback_data="show_support")]  # изменено
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def get_copy_keyboard():
     buttons = [
         [InlineKeyboardButton(text="📋 Скопировать все", callback_data="copy_all")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_support_keyboard():
+    buttons = [
+        [InlineKeyboardButton(text="✉️ Написать разработчику", url="https://t.me/Dmitry102_0")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -64,17 +85,25 @@ async def handle_callback(callback: types.CallbackQuery):
     data = callback.data
 
     if data == "show_promos":
-        # Выводим список промокодов и кнопку "Скопировать все"
         promo_list = "\n".join([f"• {code}" for code in PROMO_CODES])
         await callback.message.answer(
-            f"🎁 Актуальные промокоды (Июль 2026):\n\n{promo_list}\n\n"
+            f"🎁 Все актуальные промокоды (Июль 2026):\n\n{promo_list}\n\n"
             "Нажми «Скопировать все», чтобы получить отдельное сообщение только с кодами.",
             reply_markup=get_copy_keyboard()
         )
         await callback.answer()
 
+    elif data == "random_promo":
+        random_code = random.choice(PROMO_CODES)
+        await callback.message.answer(
+            f"🎲 Случайный промокод:\n\n`{random_code}`\n\n"
+            "Просто нажми на код → «Копировать».\n"
+            "Активируй на https://www.roblox.com/redeem",
+            parse_mode="MarkdownV2"
+        )
+        await callback.answer()
+
     elif data == "copy_all":
-        # Отправляем отдельное сообщение только с кодами (каждый на новой строке)
         codes_text = "\n".join(PROMO_CODES)
         await callback.message.answer(
             f"📋 Скопируй коды ниже:\n\n{codes_text}\n\n"
@@ -84,6 +113,13 @@ async def handle_callback(callback: types.CallbackQuery):
 
     elif data == "show_instruction":
         await callback.message.answer(INSTRUCTION)
+        await callback.answer()
+
+    elif data == "show_support":
+        await callback.message.answer(
+            SUPPORT_TEXT,
+            reply_markup=get_support_keyboard()
+        )
         await callback.answer()
 
     else:
