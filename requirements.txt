@@ -1,2 +1,1 @@
-aiogram==3.30.0
-requests
+aiogram==3.15.0
