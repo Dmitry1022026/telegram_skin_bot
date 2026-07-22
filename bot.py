@@ -74,7 +74,7 @@ async def handle_callback(callback: types.CallbackQuery):
     if data == "show_promos":
         promo_list = "\n".join([f"• {code}" for code in PROMO_CODES])
         await callback.message.answer(
-            f"🎁 Актуальные промокоды (Июль 2026):\n\n{promo_list}\n\n"
+            f"🎁 Актуальные промокоды:\n\n{promo_list}\n\n"
             "Нажми «Скопировать все», чтобы получить отдельное сообщение только с кодами.",
             reply_markup=get_copy_keyboard()
         )
